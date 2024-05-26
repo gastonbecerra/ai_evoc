@@ -21,3 +21,5 @@ data <- read_sheet(url) %>%
   glimpse()
 
 write.csv(x = data, file = './data/ai_evoc.csv')
+
+
