@@ -184,7 +184,9 @@ evoc_lemma %>%
 
 # RQ4) FACTORIALES -------------------------
 
-# 2DO: hay que hacer una tabla de 
+# 2DO: hay que hacer una tabla de features
+# seguir esta onda: 
+# https://github.com/gastonbecerra/trs-estructural/blob/main/analisis.R
 
 # tabla de fuentes consultadas por carrera
 carrera_medios_bd %>% 

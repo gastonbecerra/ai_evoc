@@ -1,0 +1,65 @@
+library(tidyverse)
+library(googlesheets4)
+
+# 2024 -------------------
+
+url <- "https://docs.google.com/spreadsheets/d/1IKDGy83iT6s1-mAxAFrmKJt3SLTJ9yFWYGOUmrnOEeM/edit?gid=68034389#gid=68034389"
+data2024 <- read_sheet(url) %>% 
+  janitor::clean_names() %>%
+  select(
+    palabra_1 = 2, palabra_2 = 3, palabra_3 = 4, palabra_4 = 5, palabra_5 = 6,
+    gaais_1n = 7, gaais_2n = 8, gaais_3n = 10, gaais_4n = 11, gaais_5n = 12, gaais_6n = 15, gaais_7n = 18, gaais_8n = 19, gaais_9n = 21,  
+    gaais_1p = 9, gaais_2p = 13, gaais_3p = 14, gaais_4p = 16, gaais_5p = 17, gaais_6p = 20, gaais_7p = 22, gaais_8p = 23,
+    conocimiento = 24, experiencia = 25,
+    edad = edad_anos, genero, estudio = maximo_nivel_de_estudio_completo_o_en_curso, ocupacion  = 55,
+    uso_redes = 26, uso_plataformas = 27, uso_apps = 28, uso_ias = 29, uso_asistentes = 30, uso_robots = 31,
+    minipip_1 = 32, minipip_2 = 33, minipip_3 = 34, minipip_4 = 35, minipip_5 = 36, minipip_6r = 37, minipip_7r = 38, minipip_8r = 39, minipip_9r = 40, 
+    minipip_10r = 41, minipip_11 = 42, minipip_12 = 43, minipip_13 = 44, minipip_14 = 45, minipip_15r = 46, minipip_16r = 47, minipip_17r = 48,
+    minipip_18r = 49, minipip_19r = 50, minipip_20r = 51,
+    timestamp = 1
+  ) %>%
+  mutate(
+    id = row_number()
+  )
+
+rm(url)
+
+glimpse(data2024)
+
+evoc2024 <- data2024 %>%
+  select(id, 1:5) %>%
+  pivot_longer(cols = -1, names_to = "orden", values_to = "palabra") %>%
+  mutate(orden = str_extract(orden, "\\d+") %>% as.numeric(.), 
+         evoc_id = paste(id, orden, sep = "-"),
+         palabra = str_to_lower(palabra) %>% str_trim(side = "both")
+  )
+
+glimpse(data2024)
+glimpse(evoc2024)
+
+# 2021 -----------------------
+
+data2021 <- readr::read_csv("./data2021/estimulos_todos.csv") %>% 
+  filter(estimulo == "Inteligencia artificial") %>%
+  left_join(readr::read_csv("./data2021/sociodemograficos_todos.csv"), by="id") %>%
+  mutate(
+    carrera2 = case_when(
+      carrera %in% c("Matemáticas", "Computación e Informática", "Física", "Química", "Medio ambiente", "Biología", "Otras Naturales y Exactas", "Ing. Civil", "Ing. Eléctrica y de la Información", "Ing. Mecánica", "Ing. Química", "Ing. Médica", "Ing. del Medio Ambiente", "Biotecnología", "Nanotecnología", "Otras Ingenierías") ~ "Física, comput. e ingeniería" , 
+      carrera %in% c("Psicología", "Medicina", "Ciencias de la Salud", "Biotecnología", "Otras Médicas y de la Salud") ~ "Psicología y medicina" ,
+      carrera %in% c("Agricultura", "Producción Animal", "Veterinarias", "Biotecnología Agropecuaria", "Otras de Ciencias Agrícolas") ~ "Agrícolas" ,
+      carrera %in% c("Economía, Negocios y Administración", "Educación", "Sociología y Política", "Urbanismo, Geografía y Arquitectura", "Comunicación y Medios", "Turismo, Eventos y Gastronomía", "Derecho", "Otras Ciencias Sociales y empresariales") ~ "Sociales y empresariales" ,
+      carrera %in% c("Historia y Antropología", "Lengua y Literatura", "Filosofía y Religión", "Arte", "Otras Humanidades") ~ "Humanidades"
+    )
+  ) 
+
+evoc2021 <- readr::read_csv("./data2021/terminos_todos.csv") %>% tibble() %>% filter(id %in% data2021$id )
+
+glimpse(data2021)
+glimpse(evoc2021)
+
+data2021 %>% write.csv('./data/data2021.csv')
+data2024 %>% write.csv('./data/data2024.csv')
+evoc2021 %>% write.csv('./data/evoc2021.csv')
+evoc2024 %>% write.csv('./data/evoc2024.csv')
+
+

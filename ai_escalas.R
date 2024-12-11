@@ -16,3 +16,20 @@ minipip_alpha <- psych::alpha(minipip_columns)$total$raw_alpha
 # Mostrar los resultados
 uso_alpha
 minipip_alpha
+
+
+
+library(corrplot)
+
+uso_corr <- cor(uso_columns, use = "complete.obs")
+minipip_corr <- cor(minipip_columns, use = "complete.obs")
+
+# Visualizar las correlaciones con mapas de calor
+# Escalas de uso
+corrplot(uso_corr, method = "color", tl.col = "black", tl.cex = 0.8,
+         addCoef.col = "black", number.cex = 0.7, title = "Correlaciones de Escalas de Uso")
+
+# Escalas MINIPIP
+corrplot(minipip_corr, method = "color", tl.col = "black", tl.cex = 0.8,
+         addCoef.col = "black", number.cex = 0.7, title = "Correlaciones de Escalas MINIPIP")
+
