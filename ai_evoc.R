@@ -115,6 +115,12 @@ crear_evok <- function( tabla, palabra, orden, frecuencia_minima = 2) {
   )
 }
 
+
+zipf_model <- lm(log(freq) ~ log(rank), data = frecuencias_palabras)
+frecuencias_palabras <- frecuencias_palabras %>%
+  mutate(zipf_line = exp(predict(zipf_model, newdata = frecuencias_palabras)))
+
+
 evok = crear_evok(tabla = evoc_lemma, 
            palabra = lemma, orden = orden, 
            frecuencia_minima = 3

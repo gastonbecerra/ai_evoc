@@ -1,7 +1,31 @@
 library(tidyverse)
 library(googlesheets4)
 
-# 2024 -------------------
+# CARGA 2021 ------------------------------------------------------
+
+data2021 <- readr::read_csv("./data2021/estimulos_todos.csv") %>% 
+  filter(estimulo == "Inteligencia artificial") %>%
+  left_join(readr::read_csv("./data2021/sociodemograficos_todos.csv"), by="id") %>%
+  mutate(
+    carrera2 = case_when(
+      carrera %in% c("Matemáticas", "Computación e Informática", "Física", "Química", "Medio ambiente", "Biología", "Otras Naturales y Exactas", "Ing. Civil", "Ing. Eléctrica y de la Información", "Ing. Mecánica", "Ing. Química", "Ing. Médica", "Ing. del Medio Ambiente", "Biotecnología", "Nanotecnología", "Otras Ingenierías") ~ "Física, comput. e ingeniería" , 
+      carrera %in% c("Psicología", "Medicina", "Ciencias de la Salud", "Biotecnología", "Otras Médicas y de la Salud") ~ "Psicología y medicina" ,
+      carrera %in% c("Agricultura", "Producción Animal", "Veterinarias", "Biotecnología Agropecuaria", "Otras de Ciencias Agrícolas") ~ "Agrícolas" ,
+      carrera %in% c("Economía, Negocios y Administración", "Educación", "Sociología y Política", "Urbanismo, Geografía y Arquitectura", "Comunicación y Medios", "Turismo, Eventos y Gastronomía", "Derecho", "Otras Ciencias Sociales y empresariales") ~ "Sociales y empresariales" ,
+      carrera %in% c("Historia y Antropología", "Lengua y Literatura", "Filosofía y Religión", "Arte", "Otras Humanidades") ~ "Humanidades"
+    )
+  ) 
+
+evoc2021 <- readr::read_csv("./data2021/terminos_todos.csv") %>% tibble() %>% 
+  filter(id %in% data2021$id ) %>% 
+  mutate( doc_id = row_number() )
+
+glimpse(data2021)
+glimpse(evoc2021)
+
+
+
+# CARGA 2024 ---------------------------------------------------------------------
 
 url <- "https://docs.google.com/spreadsheets/d/1IKDGy83iT6s1-mAxAFrmKJt3SLTJ9yFWYGOUmrnOEeM/edit?gid=68034389#gid=68034389"
 data2024 <- read_sheet(url) %>% 
@@ -32,34 +56,80 @@ evoc2024 <- data2024 %>%
   mutate(orden = str_extract(orden, "\\d+") %>% as.numeric(.), 
          evoc_id = paste(id, orden, sep = "-"),
          palabra = str_to_lower(palabra) %>% str_trim(side = "both")
-  )
+  ) %>% select(-evoc_id) %>% 
+  mutate( doc_id = row_number() )
 
 glimpse(data2024)
 glimpse(evoc2024)
 
-# 2021 -----------------------
 
-data2021 <- readr::read_csv("./data2021/estimulos_todos.csv") %>% 
-  filter(estimulo == "Inteligencia artificial") %>%
-  left_join(readr::read_csv("./data2021/sociodemograficos_todos.csv"), by="id") %>%
+
+# LIMPIEZA -------------------------------------------------
+
+
+library(udpipe)
+ud_model <- udpipe_load_model(file = '../dix/spanish-gsd-ud-2.5-191206.udpipe')
+
+lemma2021 <- udpipe_annotate(ud_model, 
+                             x = evoc2021$palabra, doc_id = evoc2021$doc_id,
+                             trace = 100, ) %>% as_tibble() %>%
+  group_by(doc_id) %>%
+  summarise(lemma = paste(lemma, collapse = " ")) %>%
+  mutate(lemma = str_to_lower(lemma)) %>%
+  mutate(lemma = chartr("áéíóúÁÉÍÓÚ", "aeiouaeiou", lemma),
+         lemma = str_replace_all(lemma, "\\s+", ""),
+         ) %>%
+  mutate(doc_id=as.integer(doc_id)) %>%
+  arrange(doc_id)
+
+lemma2021
+
+evoc2021 <- evoc2021 %>% 
+  left_join(lemma2021) %>%
+  filter(!is.na(lemma))
+
+evoc2021
+
+lemma2024 <- udpipe_annotate(ud_model, 
+                             x = evoc2024$palabra, doc_id = evoc2024$doc_id,
+                             trace = 100) %>% 
+  as_tibble() %>%
+  group_by(doc_id) %>%
+  summarise(lemma = paste(lemma, collapse = " ")) %>%
+  mutate(lemma = str_to_lower(lemma)) %>%
+  mutate(lemma = chartr("áéíóúÁÉÍÓÚ", "aeiouaeiou", lemma),
+         lemma = str_replace_all(lemma, "\\s+", "")) %>%
+  mutate(doc_id = as.integer(doc_id)) %>%
+  arrange(doc_id)
+
+lemma2024
+
+evoc2024 <- evoc2024 %>% 
+  left_join(lemma2024) %>%
+  filter(!is.na(lemma))
+
+rm(lemma2021, lemma2024, ud_model)
+
+
+evoc2021$muestra = 2021
+evoc2024$muestra = 2024
+evoc2024$valoracion = NA
+
+evoc = rbind(evoc2021, evoc2024)
+
+evoc = evoc %>%
   mutate(
-    carrera2 = case_when(
-      carrera %in% c("Matemáticas", "Computación e Informática", "Física", "Química", "Medio ambiente", "Biología", "Otras Naturales y Exactas", "Ing. Civil", "Ing. Eléctrica y de la Información", "Ing. Mecánica", "Ing. Química", "Ing. Médica", "Ing. del Medio Ambiente", "Biotecnología", "Nanotecnología", "Otras Ingenierías") ~ "Física, comput. e ingeniería" , 
-      carrera %in% c("Psicología", "Medicina", "Ciencias de la Salud", "Biotecnología", "Otras Médicas y de la Salud") ~ "Psicología y medicina" ,
-      carrera %in% c("Agricultura", "Producción Animal", "Veterinarias", "Biotecnología Agropecuaria", "Otras de Ciencias Agrícolas") ~ "Agrícolas" ,
-      carrera %in% c("Economía, Negocios y Administración", "Educación", "Sociología y Política", "Urbanismo, Geografía y Arquitectura", "Comunicación y Medios", "Turismo, Eventos y Gastronomía", "Derecho", "Otras Ciencias Sociales y empresariales") ~ "Sociales y empresariales" ,
-      carrera %in% c("Historia y Antropología", "Lengua y Literatura", "Filosofía y Religión", "Arte", "Otras Humanidades") ~ "Humanidades"
-    )
-  ) 
+    lemma = str_replace_all(lemma, fixed("tecnologir"),fixed("tecnologia")),
+    lemma = str_replace_all(lemma, fixed("herramientar"),fixed("herramienta")),
+    lemma = str_replace_all(lemma, fixed("robotica"),fixed("robot")),
+    lemma = str_replace_all(lemma, fixed("bigdatar"),fixed("big data")),    
+  )
 
-evoc2021 <- readr::read_csv("./data2021/terminos_todos.csv") %>% tibble() %>% filter(id %in% data2021$id )
+# 2do: ver e informar reemplazos adhoc
 
-glimpse(data2021)
-glimpse(evoc2021)
+
+# EXPORTA -------------------------------------------------
 
 data2021 %>% write.csv('./data/data2021.csv')
 data2024 %>% write.csv('./data/data2024.csv')
-evoc2021 %>% write.csv('./data/evoc2021.csv')
-evoc2024 %>% write.csv('./data/evoc2024.csv')
-
-
+evoc %>% write.csv('./data/evoc.csv')
