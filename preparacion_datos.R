@@ -18,7 +18,8 @@ data2021 <- readr::read_csv("./data2021/estimulos_todos.csv") %>%
 
 evoc2021 <- readr::read_csv("./data2021/terminos_todos.csv") %>% tibble() %>% 
   filter(id %in% data2021$id ) %>% 
-  mutate( doc_id = row_number() )
+  mutate( doc_id = row_number() ) %>%
+  select(-valoracion)
 
 glimpse(data2021)
 glimpse(evoc2021)
@@ -113,7 +114,6 @@ rm(lemma2021, lemma2024, ud_model)
 
 evoc2021$muestra = 2021
 evoc2024$muestra = 2024
-evoc2024$valoracion = NA
 
 evoc = rbind(evoc2021, evoc2024)
 
@@ -122,8 +122,10 @@ evoc = evoc %>%
     lemma = str_replace_all(lemma, fixed("tecnologir"),fixed("tecnologia")),
     lemma = str_replace_all(lemma, fixed("herramientar"),fixed("herramienta")),
     lemma = str_replace_all(lemma, fixed("robotica"),fixed("robot")),
-    lemma = str_replace_all(lemma, fixed("bigdatar"),fixed("big data")),    
-  )
+    lemma = str_replace_all(lemma, fixed("bigdatar"),fixed("big data")),
+    lemma = str_replace_all(lemma, fixed("."),fixed("")),    
+  ) %>%
+  filter(lemma != "")
 
 # 2do: ver e informar reemplazos adhoc
 
