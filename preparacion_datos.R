@@ -127,7 +127,21 @@ evoc = evoc %>%
   ) %>%
   filter(lemma != "")
 
+
+
+
 # 2do: ver e informar reemplazos adhoc
+# algoritr
+# algoritmo algoritmos
+# avance avances
+
+
+
+
+
+
+
+
 
 
 # EXPORTA -------------------------------------------------
@@ -135,3 +149,74 @@ evoc = evoc %>%
 data2021 %>% write.csv('./data/data2021.csv')
 data2024 %>% write.csv('./data/data2024.csv')
 evoc %>% write.csv('./data/evoc.csv')
+
+
+
+
+# ANALISIS PROTOTIPICO ----------------------------------------------------------------
+
+crear_evok <- function( tabla, palabra, orden, frecuencia_minima = 2) {
+  
+  stopifnot(is.data.frame(tabla))
+  stopifnot(is.numeric(frecuencia_minima))
+  
+  palabra_column = enquo(arg = palabra)
+  orden_column = enquo(arg = orden)
+  
+  # frequency x rank table 
+  freq_x_rank <- tabla %>% 
+    group_by(!!palabra_column) %>% summarise(
+      freq=n(), # frecuencia
+      rank=mean(!!orden_column), # media de orden de evocacion
+      .groups = 'drop_last'
+    ) 
+  
+  # calculamos una frecuencia minima
+  freq_x_rank <- freq_x_rank %>%
+    group_by(!!palabra_column) %>%
+    filter( freq >= frecuencia_minima)
+  
+  freq_cut <- mean(freq_x_rank$freq) # cut-off x frecuencias de evocacion
+  rank_cut <- mean(freq_x_rank$rank) # cut-off x rango de evocacion
+  message("frequency cut = ", freq_cut)
+  message("rank cut = ", rank_cut)
+  
+  freq_x_rank <- freq_x_rank %>% mutate( q = case_when(
+    freq >= freq_cut & rank < rank_cut ~ 1,
+    freq >= freq_cut & rank >= rank_cut ~ 2,
+    freq < freq_cut & rank < rank_cut ~ 3,
+    freq < freq_cut & rank >= rank_cut ~ 4 
+  )
+  ) %>% arrange(q,desc(freq))
+  
+  return(
+    list(
+      data = freq_x_rank ,
+      parameters = list(
+        "freq_cut" = freq_cut ,
+        "rank_cut" = rank_cut ,
+        "min_cut" = frecuencia_minima ,
+        "dix_length" = nrow(freq_x_rank) ,
+        "q1_length" = sum(freq_x_rank$q == 1) ,
+        "q2_length" = sum(freq_x_rank$q == 2) ,
+        "q3_length" = sum(freq_x_rank$q == 3) ,
+        "q4_length" = sum(freq_x_rank$q == 4) 
+      )
+    )
+  )
+}
+
+proto2021 = crear_evok(tabla = evoc %>% filter(muestra==2021), 
+                       palabra = lemma, orden = orden, 
+                       frecuencia_minima = 3
+)
+
+proto2024 = crear_evok(tabla = evoc %>% filter(muestra==2024), 
+                       palabra = lemma, orden = orden, 
+                       frecuencia_minima = 3
+)
+
+
+
+proto2021 %>% saveRDS(file = 'data/proto2021.rds')
+proto2024 %>% saveRDS(file = 'data/proto2024.rds')
