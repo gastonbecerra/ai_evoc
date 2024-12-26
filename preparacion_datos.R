@@ -29,6 +29,7 @@ glimpse(evoc2021)
 # CARGA 2024 ---------------------------------------------------------------------
 
 url <- "https://docs.google.com/spreadsheets/d/1IKDGy83iT6s1-mAxAFrmKJt3SLTJ9yFWYGOUmrnOEeM/edit?gid=68034389#gid=68034389"
+googlesheets4::gs4_deauth()
 data2024 <- read_sheet(url) %>% 
   janitor::clean_names() %>%
   select(
@@ -123,24 +124,15 @@ evoc = evoc %>%
     lemma = str_replace_all(lemma, fixed("herramientar"),fixed("herramienta")),
     lemma = str_replace_all(lemma, fixed("robotica"),fixed("robot")),
     lemma = str_replace_all(lemma, fixed("bigdatar"),fixed("big data")),
+    lemma = str_replace_all(lemma, fixed("avances"),fixed("avance")),
+    lemma = str_replace_all(lemma, fixed("algoritr"),fixed("algoritmo")),
+    lemma = str_replace_all(lemma, fixed("algoritmos"),fixed("algoritmo")),
     lemma = str_replace_all(lemma, fixed("."),fixed("")),    
   ) %>%
   filter(lemma != "")
 
 
-
-
-# 2do: ver e informar reemplazos adhoc
-# algoritr
-# algoritmo algoritmos
-# avance avances
-
-
-
-
-
-
-
+glimpse(evoc)
 
 
 
