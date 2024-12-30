@@ -200,15 +200,15 @@ crear_evok <- function( tabla, palabra, orden, frecuencia_minima = 2) {
 
 proto2021 = crear_evok(tabla = evoc %>% filter(muestra==2021), 
                        palabra = lemma, orden = orden, 
-                       frecuencia_minima = 3
+                       frecuencia_minima = 5
 )
 
 proto2024 = crear_evok(tabla = evoc %>% filter(muestra==2024), 
                        palabra = lemma, orden = orden, 
-                       frecuencia_minima = 3
+                       frecuencia_minima = 5
 )
 
 
 
-proto2021 %>% saveRDS(file = 'data/proto2021.rds')
-proto2024 %>% saveRDS(file = 'data/proto2024.rds')
+proto2021 %>% saveRDS(file = 'data/proto2021_5.rds')
+proto2024 %>% saveRDS(file = 'data/proto2024_5.rds')
