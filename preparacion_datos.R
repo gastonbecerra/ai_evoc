@@ -18,8 +18,7 @@ data2021 <- readr::read_csv("./data2021/estimulos_todos.csv") %>%
 
 evoc2021 <- readr::read_csv("./data2021/terminos_todos.csv") %>% tibble() %>% 
   filter(id %in% data2021$id ) %>% 
-  mutate( doc_id = row_number() ) %>%
-  select(-valoracion)
+  mutate( doc_id = row_number() ) 
 
 glimpse(data2021)
 glimpse(evoc2021)
@@ -113,6 +112,7 @@ evoc2024 <- evoc2024 %>%
 rm(lemma2021, lemma2024, ud_model)
 
 
+evoc2024$valoracion = NA
 evoc2021$muestra = 2021
 evoc2024$muestra = 2024
 
