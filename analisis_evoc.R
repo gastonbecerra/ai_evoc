@@ -446,32 +446,67 @@ library(Factoshiny)
 library(FactoMineR)
 library(factoextra)
 
-evoc_table <- evoc %>%
-  filter(muestra == 2021) %>%
-  count(lemma) %>%
-  filter(n > 2) %>%
-  select(lemma) %>%
-  inner_join(evoc %>% filter(muestra == 2021), by = "lemma") %>%
-  inner_join(data2021, by = "id") %>%
-  count(carrera2, lemma) %>%
-  pivot_wider(names_from = lemma, values_from = n, values_fill = 0) %>%
-  column_to_rownames("carrera2")
-# Factoshiny(evoc_table)
-
 ## carrera/ocupacion
-## borramos los pocos casos
+
+# evoc_table <- evoc %>%
+#   filter(muestra == 2021) %>%
+#   count(lemma) %>%
+#   filter(n > 2) %>%
+#   select(lemma) %>%
+#   inner_join(evoc %>% filter(muestra == 2021), by = "lemma") %>%
+#   inner_join(data2021, by = "id") %>%
+#   count(carrera2, lemma) %>%
+#   pivot_wider(names_from = lemma, values_from = n, values_fill = 0) %>%
+#   column_to_rownames("carrera2")
+# Factoshiny(evoc_table)
 
 table(data2021$carrera2)
 table(data2024$ocupacion)
 
 facto2021 <- evoc %>%
   filter(muestra == 2021) %>%
-  left_join(evoc %>% filter(muestra == 2021) %>% count(lemma), by = "lemma") %>%
-  filter(n > 3) %>%
-  left_join(data2021, by = "id") %>%
-  group_by(carrera2) %>% mutate(x=n()) %>% filter(x > 10) %>% ungroup() %>%
+  select(id,lemma) %>%
+  left_join(evoc %>% filter(muestra == 2021) %>% select(id,lemma) %>% count(lemma), by = "lemma") %>%
+  filter(n > 5) %>%
+  left_join(data2021 %>% select(id,carrera2), by = "id") %>%
+  group_by(carrera2) %>% 
+    mutate(x=n()) %>% 
+      filter(x > 10) %>% ungroup() %>%
   count(lemma, carrera2) %>%
   pivot_wider(names_from = carrera2, values_from = n, values_fill = 0) %>%
+  column_to_rownames(var = "lemma") %>%
+  as.matrix() %>%
+  FactoMineR::CA(graph = FALSE)
+summary(facto2021)
+fviz_ca_biplot(facto2021, repel = TRUE)
+
+facto2024 <- evoc %>%
+  filter(muestra == 2024) %>%
+  left_join(evoc %>% filter(muestra == 2024) %>% select(id,lemma) %>% count(lemma), by = "lemma") %>%
+  filter(n > 5) %>%
+  left_join(data2024 %>% mutate(id=as.character(id)), by="id") %>%
+  left_join(data2024 %>% count(ocupacion, name = "n_ocupacion"), by="ocupacion" ) %>%
+    filter(n_ocupacion>15) %>%  
+  count(lemma, ocupacion) %>%
+  pivot_wider(names_from = ocupacion, values_from = n, values_fill = 0) %>%
+  column_to_rownames(var = "lemma") %>%
+  as.matrix() %>%
+  FactoMineR::CA(graph = FALSE)
+summary(facto2024)
+fviz_ca_biplot(facto2024, repel = TRUE)
+
+## genero
+
+table(data2021$sexo)
+
+facto2021 <- evoc %>%
+  filter(muestra == 2021) %>%
+  left_join(evoc %>% filter(muestra == 2021) %>% count(lemma), by = "lemma") %>%
+  filter(n > 5) %>%
+  left_join(data2021 %>% select(id, sexo), by = "id") %>%
+    filter(!is.na(sexo), sexo!="otro") %>%
+    count(lemma, sexo) %>%
+  pivot_wider(names_from = sexo, values_from = n, values_fill = 0) %>%
   column_to_rownames(var = "lemma") %>%
   as.matrix() %>%
   FactoMineR::CA(graph = FALSE)
@@ -483,33 +518,11 @@ facto2024 <- evoc %>%
   left_join(evoc %>% filter(muestra == 2024) %>% count(lemma), by = "lemma") %>%
   filter(n > 3) %>%
   left_join(data2024 %>% mutate(id=as.character(id)), by="id") %>%
-  left_join(data2024 %>% count(ocupacion, name = "n_ocupacion"), by="ocupacion" ) %>%
-  filter(n_ocupacion>15) %>%  
-  count(lemma, ocupacion) %>%
-  pivot_wider(names_from = ocupacion, values_from = n, values_fill = 0) %>%
+  left_join(data2024 %>% count(genero, name = "n_genero"), by="genero" ) %>%
+  count(lemma, genero) %>%
+  pivot_wider(names_from = genero, values_from = n, values_fill = 0) %>%
   column_to_rownames(var = "lemma") %>%
   as.matrix() %>%
   FactoMineR::CA(graph = FALSE)
 summary(facto2024)
 fviz_ca_biplot(facto2024, repel = TRUE)
-
-
-
-# 2do: distinguir factores y actitudes por genero
-
-# 2do: agrupar y sintetizar ocupacion
-
-facto2024 <- evoc %>%
-  filter(muestra == 2024) %>%
-  left_join(evoc %>% filter(muestra == 2024) %>% count(lemma), by = "lemma") %>%
-  filter(n > 3) %>%
-  left_join(data2024 %>% mutate(id=as.character(id)), by = "id") %>%
-  group_by(lemma, estudio) %>%
-  summarize(n = n(), .groups = "drop") %>%
-  pivot_wider(names_from = estudio, values_from = n, values_fill = 0) %>%
-  column_to_rownames(var = "lemma") %>%
-  as.matrix() %>%
-  FactoMineR::CA(graph = FALSE)
-fviz_ca_biplot(facto2024, repel = TRUE)
-summary(facto2024)
-
